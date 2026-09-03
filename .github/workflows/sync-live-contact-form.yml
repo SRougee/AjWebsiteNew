@@ -77,3 +77,5 @@ jobs:
             git commit -m "Sync contact form with live website"
             git push
           fi
+
+# This workflow is intentionally kept for one-time live-to-repo form synchronisation.
