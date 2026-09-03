@@ -1,0 +1,79 @@
+name: Sync contact form from live site
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-form:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Fetch live site and sync contact form
+        shell: python
+        run: |
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          import re
+
+          live_url = "https://ajaccounting.co.za/"
+          req = Request(live_url, headers={"User-Agent": "Mozilla/5.0"})
+          with urlopen(req, timeout=30) as response:
+              live_html = response.read().decode("utf-8", errors="replace")
+
+          repo_path = Path("index.html")
+          repo_html = repo_path.read_text(encoding="utf-8")
+
+          forms = re.findall(r"<form\\b[^>]*>.*?</form>", live_html, flags=re.I | re.S)
+          if not forms:
+              raise SystemExit("No <form> element was found on the live site.")
+
+          live_form = None
+          for candidate in forms:
+              low = candidate.lower()
+              if "message" in low and ("email" in low or "name" in low):
+                  live_form = candidate
+                  break
+          if live_form is None:
+              raise SystemExit("Could not identify the live contact form.")
+
+          repo_forms = list(re.finditer(r"<form\\b[^>]*>.*?</form>", repo_html, flags=re.I | re.S))
+          if not repo_forms:
+              raise SystemExit("No <form> element was found in the repository index.html.")
+
+          target = None
+          for match in repo_forms:
+              low = match.group(0).lower()
+              if "message" in low and ("email" in low or "name" in low):
+                  target = match
+                  break
+          if target is None:
+              raise SystemExit("Could not identify the repository contact form.")
+
+          repo_html = repo_html[:target.start()] + live_form + repo_html[target.end():]
+          repo_path.write_text(repo_html, encoding="utf-8")
+
+          action = re.search(r"<form\\b[^>]*\\baction=[\\\"']([^\\\"']+)", live_form, flags=re.I)
+          method = re.search(r"<form\\b[^>]*\\bmethod=[\\\"']([^\\\"']+)", live_form, flags=re.I)
+          print("Live contact form action:", action.group(1) if action else "(none)")
+          print("Live contact form method:", method.group(1) if method else "(default)")
+
+      - name: Commit synced form
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- index.html; then
+            echo "The repository contact form already matches the live form."
+          else
+            git add index.html
+            git commit -m "Sync contact form with live website"
+            git push
+          fi
