@@ -16,7 +16,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Inspect live contact form source
+      - name: Transfer live Formspree contact form
         shell: python
         run: |
           from pathlib import Path
@@ -28,31 +28,65 @@ jobs:
           with urlopen(req, timeout=30) as response:
               live_html = response.read().decode("utf-8", errors="replace")
 
-          print("Live page length:", len(live_html))
-          print("Contains <form>:", bool(re.search(r"<form\b", live_html, flags=re.I)))
-          for term in ("formspree", "mailto:", "xwvjoqzy", "contactForm"):
-              print(f"Contains {term!r}:", term.lower() in live_html.lower())
-
           form_match = re.search(r"<form\b[^>]*id=[\"']contactForm[\"'][^>]*>.*?</form>", live_html, flags=re.I | re.S)
           if not form_match:
-              raise SystemExit("Could not find the live contact form with id=contactForm.")
+              raise SystemExit("Could not find the live contact form.")
 
-          print("===== LIVE CONTACT FORM =====")
-          print(form_match.group(0))
-          print("===== END LIVE CONTACT FORM =====")
+          live_form = form_match.group(0)
+          if "https://formspree.io/f/xwvjoqzy" not in live_html:
+              raise SystemExit("The live page does not contain the expected Formspree endpoint.")
 
           marker = "// ── Contact form submission"
-          idx = live_html.find(marker)
-          if idx < 0:
-              raise SystemExit("Could not find the live contact-form submission JavaScript.")
+          smooth_marker = "// ── Smooth close hero scroll hint"
+          start = live_html.find(marker)
+          end = live_html.find(smooth_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit("Could not locate the live Formspree submission JavaScript block.")
+          live_js = "<script>\n" + live_html[start:end].rstrip() + "\n</script>\n"
 
-          print("===== LIVE CONTACT FORM JAVASCRIPT =====")
-          print(live_html[idx:idx + 12000])
-          print("===== END LIVE CONTACT FORM JAVASCRIPT =====")
+          repo_path = Path("index.html")
+          repo_html = repo_path.read_text(encoding="utf-8")
 
-          # Correct extraction is ready for the next step once the exact JS block is reviewed.
+          repo_form = re.search(r"<form\b[^>]*>.*?</form>", repo_html, flags=re.I | re.S)
+          if not repo_form:
+              raise SystemExit("Could not find the repository contact form.")
+
+          # Replace the existing mailto form with the exact live Formspree form.
+          repo_html = repo_html[:repo_form.start()] + live_form + repo_html[repo_form.end():]
+
+          # The live JavaScript expects these two status elements.
+          if 'id="formSuccess"' not in repo_html:
+              status_html = '''<div class="form-success" id="formSuccess" style="display:none;"><i class="fas fa-check-circle"></i> Thank you! We'll be in touch within one business day.</div>\n<div id="formError" style="display:none;color:red;margin-bottom:16px;">❌ Something went wrong. Please try again.</div>\n'''
+              repo_html = repo_html.replace(live_form, status_html + live_form, 1)
+
+          # Add the small layout/button rules needed by the live form.
+          css_marker = ".form-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}"
+          css_add = ".form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}.btn-teal{background:var(--teal);color:var(--white)}.btn-teal:hover{background:var(--navy);transform:translateY(-2px)}.form-submit{width:100%}.form-success{text-align:center;padding:20px;color:#16a34a;font-weight:600;font-size:1rem}.form-success i{font-size:2rem;display:block;margin-bottom:8px}"
+          if ".form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}" not in repo_html:
+              if css_marker not in repo_html:
+                  raise SystemExit("Could not find the repository form CSS insertion point.")
+              repo_html = repo_html.replace(css_marker, css_marker + css_add, 1)
+
+          # Replace the repository's small footer/mobile script with the live Formspree handler added before </body>.
+          if "https://formspree.io/f/xwvjoqzy" not in repo_html:
+              if "</body>" not in repo_html:
+                  raise SystemExit("Could not find </body> in index.html.")
+              repo_html = repo_html.replace("</body>", live_js + "</body>", 1)
+
+          repo_path.write_text(repo_html, encoding="utf-8")
+          print("Transferred live Formspree endpoint: https://formspree.io/f/xwvjoqzy")
 
       - name: Commit synced form
         shell: bash
         run: |
-          echo "Diagnostic only: no repository files are changed until the live form source is confirmed."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- index.html; then
+            echo "No contact form changes were needed."
+          else
+            git add index.html
+            git commit -m "Use live Formspree contact form"
+            git push
+          fi
+
+# One-time synchronisation helper for the live contact form.
