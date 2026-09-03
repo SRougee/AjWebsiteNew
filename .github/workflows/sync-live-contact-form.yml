@@ -16,7 +16,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Fetch live site and sync contact form
+      - name: Inspect live contact form source
         shell: python
         run: |
           from pathlib import Path
@@ -29,60 +29,30 @@ jobs:
               live_html = response.read().decode("utf-8", errors="replace")
 
           print("Live page length:", len(live_html))
-          print("Contains <form>:", bool(re.search(r"<form\\b", live_html, flags=re.I)))
-          for term in ("formspree", "formsubmit", "mailto:", "getform", "web3forms", "contactform", "send message", "request free consultation"):
-              print(f"Contains {term!r}:", term in live_html.lower())
+          print("Contains <form>:", bool(re.search(r"<form\b", live_html, flags=re.I)))
+          for term in ("formspree", "mailto:", "xwvjoqzy", "contactForm"):
+              print(f"Contains {term!r}:", term.lower() in live_html.lower())
 
-          forms = re.findall(r"<form\\b[^>]*>.*?</form>", live_html, flags=re.I | re.S)
-          if not forms:
-              print("No raw form found. Relevant raw HTML lines containing form/contact keywords:")
-              for line in live_html.splitlines():
-                  low = line.lower()
-                  if any(term in low for term in ("form", "formspree", "formsubmit", "mailto:", "web3forms", "send message", "request free consultation")):
-                      print(line[:2000])
-              raise SystemExit("No <form> element was found in the live site's raw HTML. The live form may be injected by JavaScript.")
+          form_match = re.search(r"<form\b[^>]*id=[\"']contactForm[\"'][^>]*>.*?</form>", live_html, flags=re.I | re.S)
+          if not form_match:
+              raise SystemExit("Could not find the live contact form with id=contactForm.")
 
-          repo_path = Path("index.html")
-          repo_html = repo_path.read_text(encoding="utf-8")
+          print("===== LIVE CONTACT FORM =====")
+          print(form_match.group(0))
+          print("===== END LIVE CONTACT FORM =====")
 
-          live_form = None
-          for candidate in forms:
-              low = candidate.lower()
-              if "message" in low and ("email" in low or "name" in low):
-                  live_form = candidate
-                  break
-          if live_form is None:
-              raise SystemExit("Could not identify the live contact form.")
+          marker = "// ── Contact form submission"
+          idx = live_html.find(marker)
+          if idx < 0:
+              raise SystemExit("Could not find the live contact-form submission JavaScript.")
 
-          repo_forms = list(re.finditer(r"<form\\b[^>]*>.*?</form>", repo_html, flags=re.I | re.S))
-          target = None
-          for match in repo_forms:
-              low = match.group(0).lower()
-              if "message" in low and ("email" in low or "name" in low):
-                  target = match
-                  break
-          if target is None:
-              raise SystemExit("Could not identify the repository contact form.")
+          print("===== LIVE CONTACT FORM JAVASCRIPT =====")
+          print(live_html[idx:idx + 12000])
+          print("===== END LIVE CONTACT FORM JAVASCRIPT =====")
 
-          repo_html = repo_html[:target.start()] + live_form + repo_html[target.end():]
-          repo_path.write_text(repo_html, encoding="utf-8")
-
-          action = re.search(r"<form\\b[^>]*\\baction=[\\\"']([^\\\"']+)", live_form, flags=re.I)
-          method = re.search(r"<form\\b[^>]*\\bmethod=[\\\"']([^\\\"']+)", live_form, flags=re.I)
-          print("Live contact form action:", action.group(1) if action else "(none)")
-          print("Live contact form method:", method.group(1) if method else "(default)")
+          # Correct extraction is ready for the next step once the exact JS block is reviewed.
 
       - name: Commit synced form
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- index.html; then
-            echo "The repository contact form already matches the live form, or the live form is dynamically generated."
-          else
-            git add index.html
-            git commit -m "Sync contact form with live website"
-            git push
-          fi
-
-# One-time diagnostic/synchronisation workflow for the live contact form.
+          echo "Diagnostic only: no repository files are changed until the live form source is confirmed."
