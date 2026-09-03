@@ -28,12 +28,22 @@ jobs:
           with urlopen(req, timeout=30) as response:
               live_html = response.read().decode("utf-8", errors="replace")
 
-          repo_path = Path("index.html")
-          repo_html = repo_path.read_text(encoding="utf-8")
+          print("Live page length:", len(live_html))
+          print("Contains <form>:", bool(re.search(r"<form\\b", live_html, flags=re.I)))
+          for term in ("formspree", "formsubmit", "mailto:", "getform", "web3forms", "contactform", "send message", "request free consultation"):
+              print(f"Contains {term!r}:", term in live_html.lower())
 
           forms = re.findall(r"<form\\b[^>]*>.*?</form>", live_html, flags=re.I | re.S)
           if not forms:
-              raise SystemExit("No <form> element was found on the live site.")
+              print("No raw form found. Relevant raw HTML lines containing form/contact keywords:")
+              for line in live_html.splitlines():
+                  low = line.lower()
+                  if any(term in low for term in ("form", "formspree", "formsubmit", "mailto:", "web3forms", "send message", "request free consultation")):
+                      print(line[:2000])
+              raise SystemExit("No <form> element was found in the live site's raw HTML. The live form may be injected by JavaScript.")
+
+          repo_path = Path("index.html")
+          repo_html = repo_path.read_text(encoding="utf-8")
 
           live_form = None
           for candidate in forms:
@@ -45,9 +55,6 @@ jobs:
               raise SystemExit("Could not identify the live contact form.")
 
           repo_forms = list(re.finditer(r"<form\\b[^>]*>.*?</form>", repo_html, flags=re.I | re.S))
-          if not repo_forms:
-              raise SystemExit("No <form> element was found in the repository index.html.")
-
           target = None
           for match in repo_forms:
               low = match.group(0).lower()
@@ -71,11 +78,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- index.html; then
-            echo "The repository contact form already matches the live form."
+            echo "The repository contact form already matches the live form, or the live form is dynamically generated."
           else
             git add index.html
             git commit -m "Sync contact form with live website"
             git push
           fi
 
-# This workflow is intentionally kept for one-time live-to-repo form synchronisation.
+# One-time diagnostic/synchronisation workflow for the live contact form.
