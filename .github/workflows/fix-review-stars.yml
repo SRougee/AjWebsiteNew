@@ -1,0 +1,44 @@
+name: Fix review stars
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-stars:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Normalize testimonial stars
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          star = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2z"/></svg>'
+
+          def normalize(match):
+              block = match.group(0)
+              return re.sub(r'<svg viewBox="0 0 24 24"[^>]*><path d="[^"]*"/></svg>', star, block)
+
+          updated = re.sub(r'<div class="stars"[^>]*>.*?</div>', normalize, text, flags=re.S)
+          if updated == text:
+              raise SystemExit('No testimonial star block found')
+          path.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Fix broken review star"
+          git push
