@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   add-analytics:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -20,13 +21,10 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-
           path = Path("index.html")
           html = path.read_text(encoding="utf-8")
-
           measurement_id = "G-EV2E8FYEG5"
           marker = "<!-- Google tag (gtag.js) -->"
-
           if marker not in html:
               snippet = f'''<!-- Google tag (gtag.js) -->
           <script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>
@@ -37,22 +35,72 @@ jobs:
             gtag('config', '{measurement_id}');
           </script>
           '''
-              if "</head>" not in html:
-                  raise SystemExit("Could not find </head> in index.html")
               html = html.replace("</head>", snippet + "</head>", 1)
               path.write_text(html, encoding="utf-8")
-          else:
-              print("Google Analytics is already present; no changes needed.")
 
-      - name: Commit Google Analytics change
+      - name: Fix site navigation, paths and contact links
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          services = [('personal-tax','Personal Tax'),('business-accounting','Business Accounting'),('vat','VAT'),('payroll','Payroll'),('sars-disputes','SARS Queries &amp; Disputes'),('financial-statements','Financial Statements'),('cipc-services','CIPC &amp; Tax Clearance')]
+          industries = [('restaurants-hospitality','Restaurants &amp; Hospitality'),('manufacturing','Manufacturing'),('precious-metals','Gold Vendors &amp; Precious Metals'),('trailer-manufacturing','Trailer Manufacturing'),('small-business','Small &amp; Medium Businesses'),('individuals-families','Individuals &amp; Families')]
+
+          def nav(home):
+              service_links = ''.join(f'<a href="{home}services/{s}.html">{label}</a>' for s,label in services)
+              industry_links = ''.join(f'<a href="{home}industries/{s}.html">{label}</a>' for s,label in industries)
+              return ('<nav class="nav-links"><a href="'+home+'#about">About</a>'
+                      '<div class="nav-dropdown"><a href="'+home+'#services" class="nav-dropdown-toggle">Services <span>▾</span></a><div class="nav-dropdown-menu">'+service_links+'</div></div>'
+                      '<div class="nav-dropdown"><a href="'+home+'#industries" class="nav-dropdown-toggle">Industries <span>▾</span></a><div class="nav-dropdown-menu">'+industry_links+'</div></div>'
+                      '<a href="'+home+'#alwin">Meet Alwin</a><a href="'+home+'#testimonials">Reviews</a><a href="'+home+'#contact">Contact</a></nav>')
+
+          css = Path('css/style.css')
+          c = css.read_text(encoding='utf-8')
+          c = c.replace("url('./Images/heroBackGround.avif')", "url('../Images/heroBackGround.avif')")
+          if '.nav-dropdown{' not in c:
+              c += '''
+
+/* Expanded navigation */
+.nav-dropdown{position:relative;display:flex;align-items:center;height:100%}.nav-dropdown-toggle{display:flex;align-items:center;gap:6px}.nav-dropdown-toggle span{font-size:.7rem}.nav-dropdown-menu{position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,8px);min-width:245px;padding:10px;background:var(--white);border:1px solid rgba(20,44,122,.08);border-radius:12px;box-shadow:var(--shadow-md);opacity:0;visibility:hidden;pointer-events:none;z-index:1100}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown:focus-within .nav-dropdown-menu{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}.nav-dropdown-menu a{display:block!important;padding:10px 12px;border-radius:8px;font-size:.88rem!important;font-weight:600!important;white-space:nowrap}.nav-dropdown-menu a:hover,.nav-dropdown-menu a:focus{background:var(--grey-050);color:var(--navy)}.mobile-menu .mobile-section-label{color:rgba(255,255,255,.62);font-family:var(--font-body);font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:18px 0 4px}.mobile-menu nav a.mobile-sub{font-family:var(--font-body);font-size:1.02rem;padding:10px 0}@media(max-width:799px){.nav-links,.nav-cta{display:none!important}.nav-inner{padding:10px 18px}.mobile-menu{overflow-y:auto}.mobile-menu nav{margin-top:28px}}@media(min-width:800px){.hamburger{display:none}}
+'''
+          css.write_text(c, encoding='utf-8')
+
+          # Homepage desktop nav.
+          home = Path('index.html')
+          h = home.read_text(encoding='utf-8')
+          h = re.sub(r'<nav class="nav-links">.*?</nav>', nav('./'), h, count=1, flags=re.S)
+          h = h.replace('href="mailto:aij.jennings@gmail.com"', 'href="#contact"')
+          mobile = '<nav><a href="#about">About</a><a href="#services">Services</a><a href="#industries">Industries</a><a href="#alwin">Meet Alwin</a><a href="#testimonials">Reviews</a><a href="#contact">Contact</a><div class="mobile-section-label">Services</div>'
+          mobile += ''.join(f'<a class="mobile-sub" href="./services/{s}.html">{label}</a>' for s,label in services)
+          mobile += '<div class="mobile-section-label">Industries</div>'
+          mobile += ''.join(f'<a class="mobile-sub" href="./industries/{s}.html">{label}</a>' for s,label in industries) + '</nav>'
+          h = re.sub(r'<nav>.*?</nav>', mobile, h, count=1, flags=re.S)
+          home.write_text(h, encoding='utf-8')
+
+          # Interior pages: consistent dropdown nav, correct Explore paths, no mailto.
+          for p in list(Path('services').glob('*.html')) + list(Path('industries').glob('*.html')) + list(Path('areas').glob('*.html')):
+              t = p.read_text(encoding='utf-8')
+              t = re.sub(r'<nav class="nav-links">.*?</nav>', nav('../'), t, count=1, flags=re.S)
+              for s,_ in services:
+                  t = t.replace(f'href="../{s}.html"', f'href="../services/{s}.html"')
+              for s,_ in industries:
+                  t = t.replace(f'href="../{s}.html"', f'href="../industries/{s}.html"')
+              for s in ['germiston','boksburg','benoni','east-rand']:
+                  t = t.replace(f'href="../{s}.html"', f'href="../areas/{s}.html"')
+              t = t.replace('href="mailto:aij.jennings@gmail.com"', 'href="../#contact"')
+              p.write_text(t, encoding='utf-8')
+
+      - name: Commit changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- index.html; then
-            echo "No index.html changes to commit."
+          git rm -f site-fix-run.txt site-fix2-run.txt 2>/dev/null || true
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
           else
-            git add index.html
-            git commit -m "Add Google Analytics 4 tracking"
+            git commit -m "Fix site navigation hero asset and contact links"
             git push
           fi
