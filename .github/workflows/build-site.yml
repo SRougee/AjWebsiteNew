@@ -1,0 +1,80 @@
+name: Build expanded AJ Accounting site
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build expanded pages
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re, html
+          root=Path('.')
+          idx=root/'index.html'
+          s=idx.read_text(encoding='utf-8')
+          m=re.search(r'<style>(.*?)</style>',s,re.S)
+          if m:
+              css=m.group(1).strip()+"\n\n"
+              (root/'css').mkdir(exist_ok=True)
+              extra='''/* Interior pages */\n.page-hero{padding:120px 0 90px;background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:var(--white)}.page-hero h1{color:var(--white);font-size:clamp(2.5rem,6vw,4.3rem);max-width:850px}.page-hero p{max-width:760px;margin-top:20px;color:rgba(255,255,255,.88);font-size:1.1rem;line-height:1.7}.breadcrumbs{font-size:.82rem;margin-bottom:24px;color:rgba(255,255,255,.72)}.breadcrumbs a{text-decoration:underline}.content-grid{display:grid;grid-template-columns:1fr;gap:44px;align-items:start}.content-card{background:var(--white);border-radius:var(--radius-md);padding:30px;box-shadow:var(--shadow-sm)}.content-card h2{font-size:2rem;margin-bottom:14px}.content-card p,.content-card li{color:var(--ink-soft);line-height:1.75}.content-card ul{list-style:disc;padding-left:22px;margin-top:14px}.page-cta{margin-top:44px;padding:42px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:var(--white)}.page-cta h2{color:var(--white)}.page-cta p{margin:12px 0 22px;color:rgba(255,255,255,.85)}@media(min-width:800px){.content-grid{grid-template-columns:1.35fr .65fr}}\n'''
+              (root/'css/style.css').write_text(css+extra,encoding='utf-8')
+              s=s[:m.start()]+'<link rel="stylesheet" href="./css/style.css">'+s[m.end():]
+              idx.write_text(s,encoding='utf-8')
+          services={
+          'personal-tax':('Personal Income Tax Returns','ITR12 tax returns handled accurately and professionally, with practical guidance to help you stay compliant with SARS.',['Individual tax return preparation and submission','Review of relevant income and allowable deductions','Provisional and year-end tax support where applicable','Assistance with SARS queries relating to your return']),
+          'business-accounting':('Business Accounting','Reliable accounting support for small and medium businesses, giving owners clearer financial information and better control.',['Bookkeeping and monthly accounts','Management information and financial reporting','Company tax and provisional tax support','Practical accounting guidance for business owners']),
+          'vat':('VAT Services','Professional VAT support for businesses that need accurate records, returns and ongoing compliance.',['VAT registration support','VAT201 return preparation and submission','VAT record and transaction review','Assistance with SARS VAT queries']),
+          'payroll':('Payroll & EMP201','Accurate payroll administration and employer tax submissions to help businesses meet their monthly obligations.',['Payroll processing support','EMP201 preparation and submission','Employee tax administration','Practical payroll compliance support']),
+          'sars-disputes':('SARS Queries & Disputes','Professional assistance when dealing with SARS correspondence, queries, verifications and disputes.',['SARS correspondence and query assistance','Verification support','Objections and dispute preparation where appropriate','Clear explanation of next steps and required documentation']),
+          'financial-statements':('Financial Statements','Clear, professionally prepared financial statements for businesses that need dependable financial information.',['Preparation of financial statements','Year-end accounting support','Financial information for management and stakeholders','Practical assistance with accounting records']),
+          'cipc-services':('CIPC & Tax Clearance','Practical assistance with company administration, CIPC compliance and tax clearance requirements.',['CIPC company registration support','Annual return administration','Tax clearance assistance','Business compliance guidance'])}
+          industries={
+          'restaurants-hospitality':('Restaurants & Hospitality','Accounting and tax support for restaurants and hospitality businesses, where margins, payroll, VAT and cash flow all matter.'),
+          'manufacturing':('Manufacturing','Accounting support for manufacturing businesses, with attention to stock, costing, VAT, payroll and financial reporting.'),
+          'precious-metals':('Gold Vendors & Precious Metals','Accounting and tax support for businesses operating in gold and precious metals, with careful attention to records and compliance.'),
+          'trailer-manufacturing':('Trailer Manufacturing','Practical accounting support for trailer manufacturers, from bookkeeping and VAT through to financial reporting.'),
+          'small-business':('Small & Medium Businesses','Straightforward accounting and tax support designed around the needs of growing owner-managed businesses.'),
+          'individuals-families':('Individuals & Families','Personal tax and financial administration support with the personal attention expected from a local practice.')}
+          areas={
+          'germiston':('Accountant in Germiston','AJ Accounting & Tax is based in Elspark, Germiston, providing accounting and tax services to individuals and businesses throughout Germiston.'),
+          'boksburg':('Accountant in Boksburg','Professional accounting and tax support for individuals and businesses in Boksburg and the surrounding East Rand.'),
+          'benoni':('Accountant in Benoni','Accounting, tax, payroll and SARS support for clients in Benoni and surrounding areas.'),
+          'east-rand':('Accountant serving the East Rand','Local accounting and tax support across the East Rand, including Germiston, Boksburg, Benoni, Brakpan and Springs.')}
+          nav='''<header class="site-nav"><div class="nav-inner"><a href="{home}" class="logo"><span class="mark">AJ</span> AJ Accounting &amp; Tax</a><nav class="nav-links"><a href="{home}#about">About</a><a href="{home}#services">Services</a><a href="{home}#industries">Industries</a><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a></nav><a href="{home}#contact" class="btn btn-navy nav-cta">Free Consultation</a></div></header>'''
+          footer='''<footer><div class="container footer-grid"><div><div class="footer-logo"><span class="mark">AJ</span> AJ Accounting &amp; Tax</div><p style="margin-top:14px;color:rgba(255,255,255,.7);line-height:1.7">Professional accounting and tax services in Elspark, Germiston and across the East Rand.</p></div><div class="footer-col"><h4>Services</h4><ul><li><a href="{root}services/personal-tax.html">Personal Tax</a></li><li><a href="{root}services/business-accounting.html">Business Accounting</a></li><li><a href="{root}services/vat.html">VAT</a></li><li><a href="{root}services/payroll.html">Payroll</a></li></ul></div><div class="footer-col"><h4>Explore</h4><ul><li><a href="{root}industries/small-business.html">Industries</a></li><li><a href="{root}areas/germiston.html">Areas Served</a></li><li><a href="{root}sitemap.html">Sitemap</a></li></ul></div><div class="footer-col"><h4>Contact</h4><ul><li><a href="tel:+27834209049">+27 (0)83 420 9049</a></li><li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li><li><a href="https://wa.me/27834209049">WhatsApp</a></li></ul></div></div><div class="container footer-bottom"><span>© AJ Accounting &amp; Tax. All rights reserved.</span><span><a href="{root}sitemap.html">Sitemap</a></span></div></footer>'''
+          def make_page(heading,lead,body,related,folder):
+              prefix='../'; home='../'; links=''.join(f'<li><a href="{prefix}{x}">{related[x]}</a></li>' for x in related)
+              return f'''<!DOCTYPE html><html lang="en-ZA"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{html.escape(heading)} | AJ Accounting &amp; Tax</title><meta name="description" content="{html.escape(lead)}"><meta name="robots" content="index, follow"><link rel="canonical" href="https://www.ajaccounting.co.za/{folder}"><link rel="stylesheet" href="{prefix}css/style.css"></head><body>{nav.format(home=home)}<main><section class="page-hero"><div class="container"><div class="breadcrumbs"><a href="{home}">Home</a> / {html.escape(heading)}</div><h1>{html.escape(heading)}</h1><p>{html.escape(lead)}</p></div></section><section class="py"><div class="container content-grid"><div class="content-card">{body}<div class="page-cta"><h2>Need professional help?</h2><p>Speak directly with AJ Accounting &amp; Tax about your accounting or tax requirements.</p><a class="btn btn-primary" href="{home}#contact">Book a Free Consultation</a></div></div><aside class="content-card"><h2>Explore</h2><ul>{links}</ul></aside></div></section></main>{footer.format(root=prefix)}</body></html>'''
+          (root/'services').mkdir(exist_ok=True); (root/'industries').mkdir(exist_ok=True); (root/'areas').mkdir(exist_ok=True)
+          for slug,(heading,lead,bullets) in services.items():
+              body=f'<h2>{html.escape(heading)}</h2><p>AJ Accounting &amp; Tax provides practical, personal support for clients who want their tax and accounting handled accurately and professionally.</p><h2 style="margin-top:30px">How we can help</h2><ul>'+''.join(f'<li>{html.escape(x)}</li>' for x in bullets)+'</ul>'
+              rel={x[0]:x[1] for x in [('personal-tax.html','Personal Tax'),('business-accounting.html','Business Accounting'),('vat.html','VAT'),('payroll.html','Payroll')]}
+              (root/'services'/f'{slug}.html').write_text(make_page(heading,lead,body,rel,'services/'+slug+'.html'),encoding='utf-8')
+          for slug,(heading,lead) in industries.items():
+              body=f'<h2>{html.escape(heading)}</h2><p>{html.escape(lead)}</p><h2 style="margin-top:30px">Accounting support that understands your business</h2><p>Different industries have different accounting pressures. AJ Accounting &amp; Tax combines professional accounting and tax experience with personal service to help owners keep their records organised and their obligations under control.</p><ul><li>Bookkeeping and monthly accounts</li><li>Tax and VAT support</li><li>Payroll and employer submissions</li><li>Financial reporting and practical guidance</li></ul>'
+              rel={f'{x}.html':v[0] for x,v in industries.items() if x!=slug}
+              (root/'industries'/f'{slug}.html').write_text(make_page(heading,lead,body,rel,'industries/'+slug+'.html'),encoding='utf-8')
+          for slug,(heading,lead) in areas.items():
+              body=f'<h2>{html.escape(heading)}</h2><p>{html.escape(lead)}</p><h2 style="margin-top:30px">Local service with professional expertise</h2><p>Based in Elspark, AJ Accounting &amp; Tax serves clients throughout the East Rand and greater Gauteng. Whether you need personal tax assistance, business accounting, payroll or help with SARS, you can contact the practice directly.</p><ul><li>Personal income tax</li><li>Business accounting and bookkeeping</li><li>VAT and payroll</li><li>SARS queries and disputes</li><li>Financial statements and compliance</li></ul>'
+              rel={f'{x}.html':v[0] for x,v in areas.items() if x!=slug}
+              (root/'areas'/f'{slug}.html').write_text(make_page(heading,lead,body,rel,'areas/'+slug+'.html'),encoding='utf-8')
+          # Replace sitemap with links to the actual pages.
+          sections=[]
+          for label,data,folder in [('Services',services,'services'),('Industries',industries,'industries'),('Areas We Serve',areas,'areas')]:
+              items=''.join(f'<li><a href="./{folder}/{slug}.html">{html.escape(v[0])}</a></li>' for slug,v in data.items())
+              sections.append(f'<section class="content-card"><h2>{label}</h2><ul>{items}</ul></section>')
+          sm='''<!DOCTYPE html><html lang="en-ZA"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Sitemap | AJ Accounting &amp; Tax</title><meta name="description" content="Browse AJ Accounting &amp; Tax services, industries and areas served."><link rel="stylesheet" href="./css/style.css"></head><body>'''+nav.format(home='./')+'''<main><section class="page-hero"><div class="container"><h1>Website Sitemap</h1><p>Explore AJ Accounting &amp; Tax services, industries and areas served.</p></div></section><section class="py"><div class="container content-grid">'''+''.join(sections)+'''<section class="content-card"><h2>Start Here</h2><ul><li><a href="./index.html">Home</a></li><li><a href="./index.html#about">About AJ Accounting</a></li><li><a href="./index.html#contact">Contact</a></li></ul></section></div></section></main>'''+footer.format(root='./')+'''</body></html>'''
+          (root/'sitemap.html').write_text(sm,encoding='utf-8')
+          urls=['https://www.ajaccounting.co.za/','https://www.ajaccounting.co.za/sitemap.html']+[f'https://www.ajaccounting.co.za/services/{x}.html' for x in services]+[f'https://www.ajaccounting.co.za/industries/{x}.html' for x in industries]+[f'https://www.ajaccounting.co.za/areas/{x}.html' for x in areas]
+          (root/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+''.join(f'  <url><loc>{u}</loc></url>\n' for u in urls)+'</urlset>\n',encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "Expand site with service industry and location pages"
+          git push
