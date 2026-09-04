@@ -10,61 +10,63 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Apply fixes
+      - name: Fix navigation
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          # Fix CSS asset path after moving the stylesheet into /css.
           css = Path('css/style.css')
-          c = css.read_text()
+          c = css.read_text(encoding='utf-8')
           c = c.replace("url('./Images/heroBackGround.avif')", "url('../Images/heroBackGround.avif')")
-          if '.nav-dropdown{' not in c:
-              c += '''\n/* Expanded navigation */\n.nav-dropdown{position:relative;display:flex;align-items:center;height:100%}.nav-dropdown-toggle{display:flex;align-items:center;gap:6px}.nav-dropdown-toggle span{font-size:.7rem;transition:transform .2s ease}.nav-dropdown:hover .nav-dropdown-toggle span,.nav-dropdown:focus-within .nav-dropdown-toggle span{transform:rotate(180deg)}.nav-dropdown-menu{position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,8px);min-width:245px;padding:10px;background:var(--white);border:1px solid rgba(20,44,122,.08);border-radius:12px;box-shadow:var(--shadow-md);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .18s ease,visibility .18s ease;z-index:1100}.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown:focus-within .nav-dropdown-menu{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}.nav-dropdown-menu a{display:block!important;padding:10px 12px;border-radius:8px;font-size:.88rem!important;font-weight:600!important;white-space:nowrap}.nav-dropdown-menu a:hover,.nav-dropdown-menu a:focus{background:var(--grey-050);color:var(--navy)}.mobile-menu .mobile-section-label{color:rgba(255,255,255,.62);font-family:var(--font-body);font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:18px 0 4px;border-bottom:0}.mobile-menu nav a.mobile-sub{font-family:var(--font-body);font-size:1.02rem;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}@media(max-width:799px){.nav-links,.nav-cta{display:none!important}.nav-inner{padding:10px 18px}.mobile-menu{overflow-y:auto}.mobile-menu nav{margin-top:28px}}@media(min-width:800px){.hamburger{display:none}}\n'''
-          css.write_text(c)
+          c += r'''
 
-          # Fix the generator so future builds keep the same navigation and links.
-          wf = Path('.github/workflows/build-site.yml')
-          s = wf.read_text()
-          nav = '''nav='''<header class="site-nav"><div class="nav-inner"><a href="{home}" class="logo"><span class="mark">AJ</span> AJ Accounting &amp; Tax</a><nav class="nav-links"><a href="{home}#about">About</a><div class="nav-dropdown"><a href="{home}#services" class="nav-dropdown-toggle">Services <span>▾</span></a><div class="nav-dropdown-menu"><a href="{home}services/personal-tax.html">Personal Tax</a><a href="{home}services/business-accounting.html">Business Accounting</a><a href="{home}services/vat.html">VAT</a><a href="{home}services/payroll.html">Payroll</a><a href="{home}services/sars-disputes.html">SARS Queries &amp; Disputes</a><a href="{home}services/financial-statements.html">Financial Statements</a><a href="{home}services/cipc-services.html">CIPC &amp; Tax Clearance</a></div></div><div class="nav-dropdown"><a href="{home}#industries" class="nav-dropdown-toggle">Industries <span>▾</span></a><div class="nav-dropdown-menu"><a href="{home}industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a href="{home}industries/manufacturing.html">Manufacturing</a><a href="{home}industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a href="{home}industries/trailer-manufacturing.html">Trailer Manufacturing</a><a href="{home}industries/small-business.html">Small &amp; Medium Businesses</a><a href="{home}industries/individuals-families.html">Individuals &amp; Families</a></div></div><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a></nav><a href="{home}#contact" class="btn btn-navy nav-cta">Free Consultation</a></div></header>'''
-          s = re.sub(r"nav='''.*?'''", lambda m: nav, s, count=1, flags=re.S)
-          s = s.replace("rel={x[0]:x[1] for x in [('personal-tax.html','Personal Tax'),('business-accounting.html','Business Accounting'),('vat.html','VAT'),('payroll.html','Payroll')]}", "rel={x:v for x,v in [('services/personal-tax.html','Personal Tax'),('services/business-accounting.html','Business Accounting'),('services/vat.html','VAT'),('services/payroll.html','Payroll')]}")
-          s = s.replace("rel={f'{x}.html':v[0] for x,v in industries.items() if x!=slug}", "rel={f'industries/{x}.html':v[0] for x,v in industries.items() if x!=slug}")
-          s = s.replace("rel={f'{x}.html':v[0] for x,v in areas.items() if x!=slug}", "rel={f'areas/{x}.html':v[0] for x,v in areas.items() if x!=slug}")
-          s = s.replace('<li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li>', '<li>aij.jennings@gmail.com</li>')
-          wf.write_text(s)
+          /* Reliable dropdown navigation */
+          .nav-dropdown{position:relative;display:flex;align-items:center;height:100%}
+          .nav-dropdown-toggle{display:flex;align-items:center;gap:6px}
+          .nav-dropdown-toggle span{font-size:.7rem;transition:transform .2s ease}
+          .nav-dropdown:hover .nav-dropdown-toggle span,.nav-dropdown:focus-within .nav-dropdown-toggle span{transform:rotate(180deg)}
+          .nav-dropdown-menu{position:absolute;top:100%;left:50%;transform:translate(-50%,8px);min-width:245px;padding:10px;background:var(--white);border:1px solid rgba(20,44,122,.08);border-radius:12px;box-shadow:var(--shadow-md);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .18s ease,visibility .18s ease;z-index:1100}
+          .nav-dropdown-menu::before{content:'';position:absolute;left:0;right:0;top:-12px;height:12px}
+          .nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown:focus-within .nav-dropdown-menu{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}
+          .nav-dropdown-menu a{display:block!important;padding:10px 12px;border-radius:8px;font-size:.88rem!important;font-weight:600!important;white-space:nowrap}
+          .nav-dropdown-menu a:hover,.nav-dropdown-menu a:focus{background:var(--grey-050);color:var(--navy)}
+          .mobile-menu .mobile-section-label{color:rgba(255,255,255,.62);font-family:var(--font-body);font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:18px 0 4px;border-bottom:0}
+          .mobile-menu nav a.mobile-sub{font-family:var(--font-body);font-size:1.02rem;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+          @media(max-width:799px){.nav-links,.nav-cta{display:none!important}.nav-inner{padding:10px 18px}.mobile-menu{overflow-y:auto}.mobile-menu nav{margin-top:28px}}
+          @media(min-width:800px){.hamburger{display:none}}
+          '''
+          css.write_text(c,encoding='utf-8')
 
-          # Patch the homepage navigation and remove mailto usage.
-          home = Path('index.html')
-          h = home.read_text()
-          desktop = '''<nav class="nav-links"><a href="#about">About</a><div class="nav-dropdown"><a href="#services" class="nav-dropdown-toggle">Services <span>▾</span></a><div class="nav-dropdown-menu"><a href="./services/personal-tax.html">Personal Tax</a><a href="./services/business-accounting.html">Business Accounting</a><a href="./services/vat.html">VAT</a><a href="./services/payroll.html">Payroll</a><a href="./services/sars-disputes.html">SARS Queries &amp; Disputes</a><a href="./services/financial-statements.html">Financial Statements</a><a href="./services/cipc-services.html">CIPC &amp; Tax Clearance</a></div></div><div class="nav-dropdown"><a href="#industries" class="nav-dropdown-toggle">Industries <span>▾</span></a><div class="nav-dropdown-menu"><a href="./industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a href="./industries/manufacturing.html">Manufacturing</a><a href="./industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a href="./industries/trailer-manufacturing.html">Trailer Manufacturing</a><a href="./industries/small-business.html">Small &amp; Medium Businesses</a><a href="./industries/individuals-families.html">Individuals &amp; Families</a></div></div><a href="#alwin">Meet Alwin</a><a href="#testimonials">Reviews</a><a href="#contact">Contact</a></nav>'''
-          h = re.sub(r'<nav class="nav-links">.*?</nav>', desktop, h, count=1, flags=re.S)
-          h = h.replace('href="mailto:aij.jennings@gmail.com"', 'href="#contact"')
-          mobile = '''<nav><a href="#about">About</a><a href="#services">Services</a><a href="#industries">Industries</a><a href="#alwin">Meet Alwin</a><a href="#testimonials">Reviews</a><a href="#contact">Contact</a><div class="mobile-section-label">Services</div><a class="mobile-sub" href="./services/personal-tax.html">Personal Tax</a><a class="mobile-sub" href="./services/business-accounting.html">Business Accounting</a><a class="mobile-sub" href="./services/vat.html">VAT</a><a class="mobile-sub" href="./services/payroll.html">Payroll</a><a class="mobile-sub" href="./services/sars-disputes.html">SARS Queries &amp; Disputes</a><a class="mobile-sub" href="./services/financial-statements.html">Financial Statements</a><a class="mobile-sub" href="./services/cipc-services.html">CIPC &amp; Tax Clearance</a><div class="mobile-section-label">Industries</div><a class="mobile-sub" href="./industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a class="mobile-sub" href="./industries/manufacturing.html">Manufacturing</a><a class="mobile-sub" href="./industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a class="mobile-sub" href="./industries/trailer-manufacturing.html">Trailer Manufacturing</a><a class="mobile-sub" href="./industries/small-business.html">Small &amp; Medium Businesses</a><a class="mobile-sub" href="./industries/individuals-families.html">Individuals &amp; Families</a></nav>'''
-          h = re.sub(r'<nav>.*?</nav>', mobile, h, count=1, flags=re.S)
-          home.write_text(h)
+          desktop = '''<nav class="nav-links"><a href="{home}#about">About</a><div class="nav-dropdown"><a href="{home}#services" class="nav-dropdown-toggle">Services <span>▾</span></a><div class="nav-dropdown-menu"><a href="{home}services/personal-tax.html">Personal Tax</a><a href="{home}services/business-accounting.html">Business Accounting</a><a href="{home}services/vat.html">VAT</a><a href="{home}services/payroll.html">Payroll</a><a href="{home}services/sars-disputes.html">SARS Queries &amp; Disputes</a><a href="{home}services/financial-statements.html">Financial Statements</a><a href="{home}services/cipc-services.html">CIPC &amp; Tax Clearance</a></div></div><div class="nav-dropdown"><a href="{home}#industries" class="nav-dropdown-toggle">Industries <span>▾</span></a><div class="nav-dropdown-menu"><a href="{home}industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a href="{home}industries/manufacturing.html">Manufacturing</a><a href="{home}industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a href="{home}industries/trailer-manufacturing.html">Trailer Manufacturing</a><a href="{home}industries/small-business.html">Small &amp; Medium Businesses</a><a href="{home}industries/individuals-families.html">Individuals &amp; Families</a></div></div><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a></nav>'''
 
-          # Fix all already-generated interior pages immediately, including Explore links and email links.
-          for p in list(Path('services').glob('*.html')) + list(Path('industries').glob('*.html')) + list(Path('areas').glob('*.html')):
-              t = p.read_text()
-              root = '../'
-              t = re.sub(r'<nav class="nav-links">.*?</nav>', nav.replace('{home}', root).split("nav='''",1)[-1].rsplit("'''",1)[0], t, count=1, flags=re.S)
-              t = t.replace('../personal-tax.html', '../services/personal-tax.html').replace('../business-accounting.html', '../services/business-accounting.html').replace('../vat.html', '../services/vat.html').replace('../payroll.html', '../services/payroll.html')
-              t = t.replace('<li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li>', '<li>aij.jennings@gmail.com</li>')
-              # Industry and area Explore links were also missing their folder prefix.
-              if 'industries/' in str(p):
-                  for x in ['restaurants-hospitality','manufacturing','precious-metals','trailer-manufacturing','small-business','individuals-families']:
-                      t = t.replace(f'href="../{x}.html"', f'href="../industries/{x}.html"')
-              if 'areas/' in str(p):
-                  for x in ['germiston','boksburg','benoni','east-rand']:
-                      t = t.replace(f'href="../{x}.html"', f'href="../areas/{x}.html"')
-              p.write_text(t)
+          mobile = '''<nav><a href="{home}#about">About</a><a href="{home}#services">Services</a><a href="{home}#industries">Industries</a><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a><div class="mobile-section-label">Services</div><a class="mobile-sub" href="{home}services/personal-tax.html">Personal Tax</a><a class="mobile-sub" href="{home}services/business-accounting.html">Business Accounting</a><a class="mobile-sub" href="{home}services/vat.html">VAT</a><a class="mobile-sub" href="{home}services/payroll.html">Payroll</a><a class="mobile-sub" href="{home}services/sars-disputes.html">SARS Queries &amp; Disputes</a><a class="mobile-sub" href="{home}services/financial-statements.html">Financial Statements</a><a class="mobile-sub" href="{home}services/cipc-services.html">CIPC &amp; Tax Clearance</a><div class="mobile-section-label">Industries</div><a class="mobile-sub" href="{home}industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a class="mobile-sub" href="{home}industries/manufacturing.html">Manufacturing</a><a class="mobile-sub" href="{home}industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a class="mobile-sub" href="{home}industries/trailer-manufacturing.html">Trailer Manufacturing</a><a class="mobile-sub" href="{home}industries/small-business.html">Small &amp; Medium Businesses</a><a class="mobile-sub" href="{home}industries/individuals-families.html">Individuals &amp; Families</a></nav>'''
+
+          # Homepage
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = re.sub(r'<nav class="nav-links">.*?</nav>', desktop.format(home='./'), s, count=1, flags=re.S)
+          s = re.sub(r'<nav>.*?</nav>', mobile.format(home='./'), s, count=1, flags=re.S)
+          s = s.replace('href="mailto:aij.jennings@gmail.com"', 'href="#contact"')
+          p.write_text(s,encoding='utf-8')
+
+          # Interior pages
+          for p in list(Path('services').glob('*.html')) + list(Path('industries').glob('*.html')) + list(Path('areas').glob('*.html')) + [Path('sitemap.html')]:
+              s = p.read_text(encoding='utf-8')
+              home = './' if p.name == 'sitemap.html' else '../'
+              s = re.sub(r'<nav class="nav-links">.*?</nav>', desktop.format(home=home), s, count=1, flags=re.S)
+              s = s.replace('<li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li>', '<li>aij.jennings@gmail.com</li>')
+              s = s.replace('../personal-tax.html', '../services/personal-tax.html').replace('../business-accounting.html', '../services/business-accounting.html').replace('../vat.html', '../services/vat.html').replace('../payroll.html', '../services/payroll.html')
+              for x in ['restaurants-hospitality','manufacturing','precious-metals','trailer-manufacturing','small-business','individuals-families']:
+                  s = s.replace(f'href="../{x}.html"', f'href="../industries/{x}.html"')
+              for x in ['germiston','boksburg','benoni','east-rand']:
+                  s = s.replace(f'href="../{x}.html"', f'href="../areas/{x}.html"')
+              p.write_text(s,encoding='utf-8')
           PY
       - name: Commit fixes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git diff --cached --quiet || git commit -m "Fix site navigation hero asset and contact links"
+          git diff --cached --quiet || git commit -m "Fix homepage navigation and dropdown hover"
           git push
