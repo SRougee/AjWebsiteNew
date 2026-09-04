@@ -59,7 +59,7 @@
                     aria-label="Open menu"><span></span><span></span><span></span></button>
             </div>
         </div>
-    </header>
+    </header><button class="hamburger" id="mobileMenuOpen" type="button" aria-label="Open menu" aria-controls="mobileMenu" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="mobile-menu" id="mobileMenu">
         <div class="mobile-menu-top"><span class="logo"><span class="mark">AJ</span> AJ Accounting &amp;
                 Tax</span><button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">×</button>
@@ -426,6 +426,6 @@
                 d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20z" />
         </svg></a>
     <script>const b = document.getElementById('hamburgerBtn'), m = document.getElementById('mobileMenu'), c = document.getElementById('mobileMenuClose'); b.addEventListener('click', () => m.classList.add('open')); c.addEventListener('click', () => m.classList.remove('open')); m.querySelectorAll('a').forEach(a => a.addEventListener('click', () => m.classList.remove('open'))); document.getElementById('year').textContent = new Date().getFullYear();</script>
-<script>(function(){var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileMenuOpen'),x=document.querySelector('.mobile-menu-close');if(!m||!o)return;function open(){m.classList.add('open');o.setAttribute('aria-expanded','true');document.body.style.overflow='hidden'}function close(){m.classList.remove('open');o.setAttribute('aria-expanded','false');document.body.style.overflow=''}o.addEventListener('click',open);if(x)x.addEventListener('click',close);m.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(a.getAttribute('href')&&a.getAttribute('href').charAt(0)==='#')close()})})})();</script></body>
+<script>(function(){var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileMenuOpen'),x=document.querySelector('.mobile-menu-close');if(!m||!o)return;function open(){m.classList.add('open');o.setAttribute('aria-expanded','true');document.body.style.overflow='hidden'}function close(){m.classList.remove('open');o.setAttribute('aria-expanded','false');document.body.style.overflow=''}o.addEventListener('click',open);if(x)x.addEventListener('click',close);m.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(a.getAttribute('href')&&a.getAttribute('href').charAt(0)==='#')close()})})})();</script><script>(function(){var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileMenuOpen'),x=document.querySelector('.mobile-menu-close');if(!m||!o)return;function openMenu(){m.classList.add('open');o.setAttribute('aria-expanded','true');document.body.style.overflow='hidden'}function closeMenu(){m.classList.remove('open');o.setAttribute('aria-expanded','false');document.body.style.overflow=''}o.addEventListener('click',openMenu);if(x)x.addEventListener('click',closeMenu);m.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(a.getAttribute('href')&&a.getAttribute('href').charAt(0)==='#')closeMenu()})})})();</script></body>
 
 </html>
