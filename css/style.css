@@ -319,7 +319,7 @@
             position: absolute;
             inset: 0;
             z-index: -2;
-            background-image: url('./Images/heroBackGround.avif');
+            background-image: url('../Images/heroBackGround.avif');
             background-size: cover;
             background-position: center 30%
         }
@@ -986,3 +986,32 @@
 
 /* Interior pages */
 .page-hero{padding:120px 0 90px;background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:var(--white)}.page-hero h1{color:var(--white);font-size:clamp(2.5rem,6vw,4.3rem);max-width:850px}.page-hero p{max-width:760px;margin-top:20px;color:rgba(255,255,255,.88);font-size:1.1rem;line-height:1.7}.breadcrumbs{font-size:.82rem;margin-bottom:24px;color:rgba(255,255,255,.72)}.breadcrumbs a{text-decoration:underline}.content-grid{display:grid;grid-template-columns:1fr;gap:44px;align-items:start}.content-card{background:var(--white);border-radius:var(--radius-md);padding:30px;box-shadow:var(--shadow-sm)}.content-card h2{font-size:2rem;margin-bottom:14px}.content-card p,.content-card li{color:var(--ink-soft);line-height:1.75}.content-card ul{list-style:disc;padding-left:22px;margin-top:14px}.page-cta{margin-top:44px;padding:42px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:var(--white)}.page-cta h2{color:var(--white)}.page-cta p{margin:12px 0 22px;color:rgba(255,255,255,.85)}@media(min-width:800px){.content-grid{grid-template-columns:1.35fr .65fr}}
+
+/* Interior pages */
+.page-hero{padding:120px 0 90px;background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:var(--white)}
+.page-hero h1{color:var(--white);font-size:clamp(2.5rem,6vw,4.3rem);max-width:850px}
+.page-hero p{max-width:760px;margin-top:20px;color:rgba(255,255,255,.88);font-size:1.1rem;line-height:1.7}
+.breadcrumbs{font-size:.82rem;margin-bottom:24px;color:rgba(255,255,255,.72)}
+.breadcrumbs a{text-decoration:underline}
+.content-grid{display:grid;grid-template-columns:1fr;gap:44px;align-items:start}
+.content-card{background:var(--white);border-radius:var(--radius-md);padding:30px;box-shadow:var(--shadow-sm)}
+.content-card h2{font-size:2rem;margin-bottom:14px}
+.content-card p,.content-card li{color:var(--ink-soft);line-height:1.75}
+.content-card ul{list-style:disc;padding-left:22px;margin-top:14px}
+.page-cta{margin-top:44px;padding:42px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:var(--white)}
+.page-cta h2{color:var(--white)}
+.page-cta p{margin:12px 0 22px;color:rgba(255,255,255,.85)}
+/* Shared dropdown navigation */
+.nav-dropdown{position:relative;display:flex;align-items:center;height:100%}
+.nav-dropdown-toggle{display:flex!important;align-items:center;gap:6px}
+.nav-dropdown-toggle span{font-size:.7rem;transition:transform .2s ease}
+.nav-dropdown:hover .nav-dropdown-toggle span,.nav-dropdown:focus-within .nav-dropdown-toggle span{transform:rotate(180deg)}
+.nav-dropdown-menu{position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,8px);min-width:245px;padding:10px;background:var(--white);border:1px solid rgba(20,44,122,.08);border-radius:12px;box-shadow:var(--shadow-md);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .18s ease,visibility .18s ease;z-index:1100}
+.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown:focus-within .nav-dropdown-menu{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}
+.nav-dropdown-menu a{display:block!important;padding:10px 12px;border-radius:8px;font-size:.88rem!important;font-weight:600!important;white-space:nowrap}
+.nav-dropdown-menu a:hover,.nav-dropdown-menu a:focus{background:var(--grey-050);color:var(--navy)}
+.mobile-menu .mobile-section-label{color:rgba(255,255,255,.62);font-family:var(--font-body);font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:18px 0 4px;border-bottom:0}
+.mobile-menu nav a.mobile-sub{font-family:var(--font-body);font-size:1.02rem;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+@media(max-width:799px){.nav-links,.nav-cta{display:none!important}.nav-inner{padding:10px 18px}.mobile-menu{overflow-y:auto}.mobile-menu nav{margin-top:28px}}
+@media(min-width:800px){.hamburger{display:none}}
+@media(min-width:800px){.content-grid{grid-template-columns:1.35fr .65fr}}
