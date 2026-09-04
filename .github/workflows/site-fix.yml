@@ -10,7 +10,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Fix navigation
+      - name: Fix navigation and Explore links
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -19,7 +19,8 @@ jobs:
           css = Path('css/style.css')
           c = css.read_text(encoding='utf-8')
           c = c.replace("url('./Images/heroBackGround.avif')", "url('../Images/heroBackGround.avif')")
-          c += r'''
+          if '/* Reliable dropdown navigation */' not in c:
+              c += r'''
 
           /* Reliable dropdown navigation */
           .nav-dropdown{position:relative;display:flex;align-items:center;height:100%}
@@ -40,9 +41,9 @@ jobs:
 
           desktop = '''<nav class="nav-links"><a href="{home}#about">About</a><div class="nav-dropdown"><a href="{home}#services" class="nav-dropdown-toggle">Services <span>▾</span></a><div class="nav-dropdown-menu"><a href="{home}services/personal-tax.html">Personal Tax</a><a href="{home}services/business-accounting.html">Business Accounting</a><a href="{home}services/vat.html">VAT</a><a href="{home}services/payroll.html">Payroll</a><a href="{home}services/sars-disputes.html">SARS Queries &amp; Disputes</a><a href="{home}services/financial-statements.html">Financial Statements</a><a href="{home}services/cipc-services.html">CIPC &amp; Tax Clearance</a></div></div><div class="nav-dropdown"><a href="{home}#industries" class="nav-dropdown-toggle">Industries <span>▾</span></a><div class="nav-dropdown-menu"><a href="{home}industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a href="{home}industries/manufacturing.html">Manufacturing</a><a href="{home}industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a href="{home}industries/trailer-manufacturing.html">Trailer Manufacturing</a><a href="{home}industries/small-business.html">Small &amp; Medium Businesses</a><a href="{home}industries/individuals-families.html">Individuals &amp; Families</a></div></div><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a></nav>'''
 
-          mobile = '''<nav><a href="{home}#about">About</a><a href="{home}#services">Services</a><a href="{home}#industries">Industries</a><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a><div class="mobile-section-label">Services</div><a class="mobile-sub" href="{home}services/personal-tax.html">Personal Tax</a><a class="mobile-sub" href="{home}services/business-accounting.html">Business Accounting</a><a class="mobile-sub" href="{home}services/vat.html">VAT</a><a class="mobile-sub" href="{home}services/payroll.html">Payroll</a><a class="mobile-sub" href="{home}services/sars-disputes.html">SARS Queries &amp; Disputes</a><a class="mobile-sub" href="{home}services/financial-statements.html">Financial Statements</a><a class="mobile-sub" href="{home}services/cipc-services.html">CIPC &amp; Tax Clearance</a><div class="mobile-section-label">Industries</div><a class="mobile-sub" href="{home}industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a class="mobile-sub" href="{home}industries/manufacturing.html">Manufacturing</a><a class="mobile-sub" href="{home}industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a class="mobile-sub" href="{home}industries/trailer-manufacturing.html">Trailer Manufacturing</a><a class="mobile-sub" href="{home}industries/small-business.html">Small &amp; Medium Businesses</a><a class="mobile-sub" href="{home}industries/individuals-families.html">Individuals &amp; Families</a></nav>'''
+          mobile = '''<nav><a href="{home}#about">About</a><a href="{home}#services">Services</a><a href="{home}#industries">Industries</a><a href="{home}#alwin">Meet Alwin</a><a href="{home}#testimonials">Reviews</a><a href="{home}#contact">Contact</a><div class="mobile-section-label">Services</div><a class="mobile-sub" href="{home}services/personal-tax.html">Personal Tax</a><a class="mobile-sub" href="{home}services/business-accounting.html">Business Accounting</a><a class="mobile-sub" href="{home}services/vat.html">VAT</a><a class="mobile-sub" href="{home}services/payroll.html">Payroll</a><a class="mobile-sub" href="{home}sars-disputes.html">SARS Queries &amp; Disputes</a><a class="mobile-sub" href="{home}services/financial-statements.html">Financial Statements</a><a class="mobile-sub" href="{home}services/cipc-services.html">CIPC &amp; Tax Clearance</a><div class="mobile-section-label">Industries</div><a class="mobile-sub" href="{home}industries/restaurants-hospitality.html">Restaurants &amp; Hospitality</a><a class="mobile-sub" href="{home}industries/manufacturing.html">Manufacturing</a><a class="mobile-sub" href="{home}industries/precious-metals.html">Gold Vendors &amp; Precious Metals</a><a class="mobile-sub" href="{home}industries/trailer-manufacturing.html">Trailer Manufacturing</a><a class="mobile-sub" href="{home}industries/small-business.html">Small &amp; Medium Businesses</a><a class="mobile-sub" href="{home}industries/individuals-families.html">Individuals &amp; Families</a></nav>'''
 
-          # Homepage
+          # Homepage navigation
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
           s = re.sub(r'<nav class="nav-links">.*?</nav>', desktop.format(home='./'), s, count=1, flags=re.S)
@@ -50,17 +51,47 @@ jobs:
           s = s.replace('href="mailto:aij.jennings@gmail.com"', 'href="#contact"')
           p.write_text(s,encoding='utf-8')
 
-          # Interior pages
-          for p in list(Path('services').glob('*.html')) + list(Path('industries').glob('*.html')) + list(Path('areas').glob('*.html')) + [Path('sitemap.html')]:
+          service_links = [
+              ('services/personal-tax.html','Personal Tax'),
+              ('services/business-accounting.html','Business Accounting'),
+              ('services/vat.html','VAT'),
+              ('services/payroll.html','Payroll'),
+              ('services/sars-disputes.html','SARS Queries &amp; Disputes'),
+              ('services/financial-statements.html','Financial Statements'),
+              ('services/cipc-services.html','CIPC &amp; Tax Clearance')]
+          industry_links = [
+              ('industries/restaurants-hospitality.html','Restaurants &amp; Hospitality'),
+              ('industries/manufacturing.html','Manufacturing'),
+              ('industries/precious-metals.html','Gold Vendors &amp; Precious Metals'),
+              ('industries/trailer-manufacturing.html','Trailer Manufacturing'),
+              ('industries/small-business.html','Small &amp; Medium Businesses'),
+              ('industries/individuals-families.html','Individuals &amp; Families')]
+          area_links = [
+              ('areas/germiston.html','Germiston'),
+              ('areas/boksburg.html','Boksburg'),
+              ('areas/benoni.html','Benoni'),
+              ('areas/east-rand.html','East Rand')]
+
+          def explore(items, root='../'):
+              return '<aside class="content-card"><h2>Explore</h2><ul>' + ''.join(f'<li><a href="{root}{href}">{label}</a></li>' for href,label in items) + '</ul></aside>'
+
+          # Interior pages: make the Explore block complete for each page category.
+          for p in list(Path('services').glob('*.html')):
               s = p.read_text(encoding='utf-8')
-              home = './' if p.name == 'sitemap.html' else '../'
-              s = re.sub(r'<nav class="nav-links">.*?</nav>', desktop.format(home=home), s, count=1, flags=re.S)
+              s = re.sub(r'<aside class="content-card"><h2>Explore</h2><ul>.*?</ul></aside>', explore(service_links), s, count=1, flags=re.S)
               s = s.replace('<li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li>', '<li>aij.jennings@gmail.com</li>')
-              s = s.replace('../personal-tax.html', '../services/personal-tax.html').replace('../business-accounting.html', '../services/business-accounting.html').replace('../vat.html', '../services/vat.html').replace('../payroll.html', '../services/payroll.html')
-              for x in ['restaurants-hospitality','manufacturing','precious-metals','trailer-manufacturing','small-business','individuals-families']:
-                  s = s.replace(f'href="../{x}.html"', f'href="../industries/{x}.html"')
-              for x in ['germiston','boksburg','benoni','east-rand']:
-                  s = s.replace(f'href="../{x}.html"', f'href="../areas/{x}.html"')
+              p.write_text(s,encoding='utf-8')
+
+          for p in list(Path('industries').glob('*.html')):
+              s = p.read_text(encoding='utf-8')
+              s = re.sub(r'<aside class="content-card"><h2>Explore</h2><ul>.*?</ul></aside>', explore(industry_links), s, count=1, flags=re.S)
+              s = s.replace('<li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li>', '<li>aij.jennings@gmail.com</li>')
+              p.write_text(s,encoding='utf-8')
+
+          for p in list(Path('areas').glob('*.html')):
+              s = p.read_text(encoding='utf-8')
+              s = re.sub(r'<aside class="content-card"><h2>Explore</h2><ul>.*?</ul></aside>', explore(area_links), s, count=1, flags=re.S)
+              s = s.replace('<li><a href="mailto:aij.jennings@gmail.com">aij.jennings@gmail.com</a></li>', '<li>aij.jennings@gmail.com</li>')
               p.write_text(s,encoding='utf-8')
           PY
       - name: Commit fixes
@@ -68,5 +99,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git diff --cached --quiet || git commit -m "Fix homepage navigation and dropdown hover"
+          git diff --cached --quiet || git commit -m "Complete Explore links on interior pages"
           git push
