@@ -463,6 +463,6 @@
   var y = document.getElementById('year');
   if (y) y.textContent = new Date().getFullYear();
 })();
-</script></body>
+</script><script>(function(){var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileMenuOpen'),x=document.querySelector('.mobile-menu-close');if(!m||!o)return;function open(){m.classList.add('open');o.setAttribute('aria-expanded','true');document.body.style.overflow='hidden'}function close(){m.classList.remove('open');o.setAttribute('aria-expanded','false');document.body.style.overflow=''}o.addEventListener('click',open);if(x)x.addEventListener('click',close);m.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(a.getAttribute('href')&&a.getAttribute('href').charAt(0)==='#')close()})})})();</script></body>
 
 </html>
