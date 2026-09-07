@@ -1,0 +1,42 @@
+name: Update site page navigation
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  links:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point About and Reviews navigation to dedicated pages
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          replacements = {
+              'href="../#about"': 'href="../about.html"',
+              'href="../#alwin"': 'href="../about.html#alwin"',
+              'href="../#testimonials"': 'href="../reviews.html"',
+              'href="./#about"': 'href="./about.html"',
+              'href="./#alwin"': 'href="./about.html#alwin"',
+              'href="./#testimonials"': 'href="./reviews.html"',
+          }
+          for p in [Path('index.html'), Path('about.html'), Path('reviews.html')] + list(Path('services').glob('*.html')) + list(Path('industries').glob('*.html')) + list(Path('areas').glob('*.html')):
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+              old = s
+              for a,b in replacements.items():
+                  s = s.replace(a,b)
+              if s != old:
+                  p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit navigation changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html about.html reviews.html services industries areas
+          git diff --cached --quiet || git commit -m "Link navigation to About and Reviews pages"
+          git push
