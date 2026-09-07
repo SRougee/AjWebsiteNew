@@ -1,0 +1,36 @@
+name: Fix homepage service links
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update homepage service links
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          replacements={
+            '<a href="./services/vat.html" class="link">Learn more →</a></div></article>':'<a href="./services/business-accounting.html" class="link">Learn more →</a></div></article>',
+            '<article class="service-card"><div class="img-wrap"><img src="./Images/WWD6.avif" alt="Financial statements and SARS queries"></div><div class="body"><span class="num">06</span><h3>Financial Statements &amp; SARS Queries</h3><p>Financial statements and practical assistance with SARS verification, assessments and queries.</p><a href="./services/financial-statements.html" class="link">Learn more →</a></div></article>':'<article class="service-card"><div class="img-wrap"><img src="./Images/WWD6.avif" alt="Financial statements and SARS queries"></div><div class="body"><span class="num">06</span><h3>Financial Statements</h3><p>Clear, professionally prepared financial statements and year-end accounting support for dependable financial information.</p><a href="./services/financial-statements.html" class="link">Learn more →</a></div></article>\n<article class="service-card"><div class="body"><span class="num">07</span><h3>SARS Queries &amp; Disputes</h3><p>Practical assistance with SARS verification, assessments, correspondence and dispute processes where appropriate.</p><a href="./services/sars-disputes.html" class="link">Learn more →</a></div></article>'
+          }
+          for old,new in replacements.items():
+              if old in s:
+                  s=s.replace(old,new,1)
+          # Ensure the VAT card links directly to the VAT service if the company-tax card has been separated in a future build.
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Link homepage services to dedicated pages"
+          git push
