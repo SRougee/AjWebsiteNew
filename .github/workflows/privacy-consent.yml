@@ -1,0 +1,64 @@
+name: Apply privacy consent
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  privacy:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add consent manager and legal links
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          pages = [root / 'index.html', root / 'about.html', root / 'reviews.html', root / 'privacy-policy.html', root / 'terms-and-conditions.html', root / 'sitemap.html']
+          pages += list((root / 'services').glob('*.html'))
+          pages += list((root / 'industries').glob('*.html'))
+          pages += list((root / 'areas').glob('*.html'))
+
+          for p in pages:
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+              prefix = './' if p.parent == root else '../'
+
+              # Remove the previous always-on GA tag.
+              s = re.sub(r'\s*<script async src="https://www\.googletagmanager\.com/gtag/js\?id=G-EV2E8FYEG5"></script>\s*<script>.*?</script>', '', s, flags=re.S)
+              s = re.sub(r'\s*<!-- Google tag \(gtag\.js\) -->.*?</script>\s*<script>.*?</script>', '', s, flags=re.S)
+
+              if 'cookie-consent.js' not in s:
+                  s = s.replace('</body>', f'<script src="{prefix}cookie-consent.js"></script>\n</body>', 1)
+
+              if 'footer-legal-links' not in s and '</footer>' in s:
+                  legal = f'<div class="footer-legal-links"><a href="{prefix}privacy-policy.html">Privacy Policy</a><span aria-hidden="true">·</span><a href="{prefix}terms-and-conditions.html">Terms &amp; Conditions</a></div>'
+                  s = s.replace('</footer>', legal + '</footer>', 1)
+
+              if p == root / 'index.html' and 'form-privacy-notice' not in s:
+                  notice = '<p class="form-privacy-notice">By submitting this form, you acknowledge that AJ Accounting &amp; Tax will process the information provided in accordance with our <a href="./privacy-policy.html">Privacy Policy</a>.</p>'
+                  s = s.replace('</form>', notice + '</form>', 1)
+
+              p.write_text(s, encoding='utf-8')
+
+          css = root / 'css' / 'style.css'
+          c = css.read_text(encoding='utf-8')
+          if '.footer-legal-links{' not in c:
+              c += '''\n\n/* Privacy and cookie controls */\n.footer-legal-links{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12);font-size:.82rem;color:rgba(255,255,255,.65)}\n.footer-legal-links a:hover{color:#fff}\n.form-privacy-notice{margin-top:12px!important;font-size:.76rem!important;line-height:1.5;color:var(--ink-soft)}\n.form-privacy-notice a{text-decoration:underline;color:var(--navy)}\n'''
+              css.write_text(c, encoding='utf-8')
+
+      - name: Commit privacy changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "Apply cookie consent and privacy controls"
+          git push
